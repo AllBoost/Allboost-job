@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Теплые звонки</title>
+</head>
+<body>
+    <h1>Контакты для теплых звонков</h1>
+    <form method="post">
+        {% for contact in contacts %}
+        <div>
+            <p>{{ contact['Name'] }} - {{ contact['Phone'] }}</p>
+            <input type="radio" name="status" value="confirmed"> Подтверждено
+            <input type="radio" name="status" value="not_confirmed"> Не подтверждено
+            <button type="submit" name="contact_id" value="{{ loop.index0 }}">Обновить</button>
+        </div>
+        {% endfor %}
+    </form>
+</body>
+</html>
