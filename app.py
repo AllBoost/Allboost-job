@@ -1,18 +1,21 @@
-from flask import Flask, request, jsonify, render_template
-import sqlite3
+from flask import Flask, render_template, request, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from models import db, User, Baza, BazaGold, BazaCold
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///allboost.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.secret_key = 'your_secret_key'
 
-DATABASE = 'allboost_job.db'
+db.init_app(app)
 
-def query_db(query, args=(), one=False):
-    con = sqlite3.connect(DATABASE)
-    cur = con.cursor()
-    cur.execute(query, args)
-    rv = cur.fetchall()
-    con.commit()
-    con.close()
-    return (rv[0] if rv else None) if one else rv
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 @app.route('/')
 def index():
@@ -21,34 +24,28 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        name = request.form['name']
-        position = request.form['position']
-        query_db('INSERT INTO employees (name, position) VALUES (?, ?)', [name, position])
-        return jsonify({'status': 'success'}), 200
+        username = request.form['username']
+        phone_number = request.form['phone_number']
+        role = request.form['role']
+        new_user = User(username=username, phone_number=phone_number, role=role)
+        db.session.add(new_user)
+        db.session.commit()
+        login_user(new_user)
+        return redirect(url_for('dashboard'))
     return render_template('register.html')
 
-@app.route('/manager/<string:position>', methods=['GET', 'POST'])
-def manager(position):
-    if position == 'cold':
-        clients = query_db('SELECT * FROM clients')
-    elif position == 'warm':
-        clients = query_db('SELECT * FROM gold_clients')
-    else:
-        return "Invalid position", 400
-    
-    if request.method == 'POST':
-        client_id = request.form['client_id']
-        status = request.form['status']
-        if position == 'cold':
-            if status == 'interested':
-                query_db('INSERT INTO gold_clients (name, status) SELECT name, status FROM clients WHERE id = ?', [client_id])
-            query_db('INSERT INTO cold_clients (name, status) SELECT name, status FROM clients WHERE id = ?', [client_id])
-        elif position == 'warm':
-            if status == 'confirmed':
-                query_db('INSERT INTO confirmed_clients (name, status) SELECT name, status FROM gold_clients WHERE id = ?', [client_id])
-        return jsonify({'status': 'success'}), 200
-    
-    return render_template('manager.html', clients=clients, position=position)
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    if current_user.role == 'Менеджер холодных звонков':
+        contacts = Baza.query.all()
+        return render_template('cold_calls.html', contacts=contacts)
+    elif current_user.role == 'Менеджер горячих звонков':
+        contacts = BazaGold.query.all()
+        return render_template('warm_calls.html', contacts=contacts)
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)

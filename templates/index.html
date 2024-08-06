@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AllBoost Job</title>
+    <title>Welcome to AllBoost Job</title>
 </head>
 <body>
     <h1>Welcome to AllBoost Job</h1>
-    <a href="/register">Register</a>
+    <img src="{{ url_for('static', filename='welcome.gif') }}" alt="Welcome GIF">
+    <a href="{{ url_for('register') }}">Register</a>
 </body>
 </html>

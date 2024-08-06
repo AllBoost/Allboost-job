@@ -2,19 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Теплые звонки</title>
+    <title>Warm Calls</title>
 </head>
 <body>
-    <h1>Контакты для теплых звонков</h1>
-    <form method="post">
+    <h1>Warm Calls</h1>
+    <ul>
         {% for contact in contacts %}
-        <div>
-            <p>{{ contact['Name'] }} - {{ contact['Phone'] }}</p>
-            <input type="radio" name="status" value="confirmed"> Подтверждено
-            <input type="radio" name="status" value="not_confirmed"> Не подтверждено
-            <button type="submit" name="contact_id" value="{{ loop.index0 }}">Обновить</button>
-        </div>
+            <li>{{ contact.name }} - {{ contact.phone }}
+                <form method="POST">
+                    <input type="hidden" name="contact_id" value="{{ contact.id }}">
+                    <button type="submit" name="confirmed" value="confirmed">Confirmed</button>
+                    <button type="submit" name="confirmed" value="not_confirmed">Not Confirmed</button>
+                </form>
+            </li>
         {% endfor %}
-    </form>
+    </ul>
 </body>
 </html>

@@ -2,19 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Холодные звонки</title>
+    <title>Cold Calls</title>
 </head>
 <body>
-    <h1>Контакты для холодных звонков</h1>
-    <form method="post">
+    <h1>Cold Calls</h1>
+    <ul>
         {% for contact in contacts %}
-        <div>
-            <p>{{ contact['Name'] }} - {{ contact['Phone'] }}</p>
-            <input type="radio" name="status" value="interested"> Интересно
-            <input type="radio" name="status" value="not_interested"> Не интересно
-            <button type="submit" name="contact_id" value="{{ loop.index0 }}">Обновить</button>
-        </div>
+            <li>{{ contact.name }} - {{ contact.phone }}
+                <form method="POST">
+                    <input type="hidden" name="contact_id" value="{{ contact.id }}">
+                    <button type="submit" name="interest" value="interested">Interested</button>
+                    <button type="submit" name="interest" value="not_interested">Not Interested</button>
+                </form>
+            </li>
         {% endfor %}
-    </form>
+    </ul>
 </body>
 </html>
