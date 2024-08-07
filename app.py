@@ -1,10 +1,9 @@
 from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///allboost.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_secret_key'
 
@@ -48,21 +47,53 @@ def index():
 
 @app.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
-    new_user = User(telegram_id=data['telegram_id'], phone=data['phone'])
+    data = request.json
+    new_user = User(telegram_id=data['telegram_id'], phone=data['phone'], role=data['role'])
     db.session.add(new_user)
     db.session.commit()
-    return jsonify({"message": "User registered successfully"}), 201
+    return jsonify({'message': 'User registered successfully'})
 
-@app.route('/select_role', methods=['POST'])
-def select_role():
-    data = request.get_json()
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
     user = User.query.filter_by(telegram_id=data['telegram_id']).first()
-    user.role = data['role']
-    db.session.commit()
-    return jsonify({"message": "Role selected successfully"}), 200
+    if user and user.phone == data['phone']:
+        login_user(user)
+        return jsonify({'message': 'Login successful'})
+    return jsonify({'message': 'Invalid credentials'}), 401
 
-# Остальные маршруты для функционала
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return jsonify({'message': 'Logged out successfully'})
+
+@app.route('/get_contacts', methods=['GET'])
+@login_required
+def get_contacts():
+    if current_user.role == 'Менеджер холодных звонков':
+        contacts = Baza.query.all()
+    elif current_user.role == 'Менеджер теплых звонков':
+        contacts = BazaGold.query.all()
+    return jsonify([{'id': contact.id, 'contact': contact.contact, 'status': contact.status} for contact in contacts])
+
+@app.route('/update_contact', methods=['POST'])
+@login_required
+def update_contact():
+    data = request.json
+    contact = Baza.query.get(data['id'])
+    if contact:
+        if data['status'] == 'интересно':
+            new_contact = BazaGold(contact=contact.contact, status='подтверждено')
+            db.session.add(new_contact)
+        elif data['status'] == 'не интересно':
+            new_contact = BazaCold(contact=contact.contact, status='не подтверждено')
+            db.session.add(new_contact)
+        db.session.delete(contact)
+        db.session.commit()
+    return jsonify({'message': 'Contact updated successfully'})
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
