@@ -1,17 +1,42 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from models import db, User, Baza, BazaGold, BazaCold
+import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///allboost.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = 'your_secret_key'
+app.config['SECRET_KEY'] = 'your_secret_key'
 
-db.init_app(app)
-
+db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    telegram_id = db.Column(db.String(100), unique=True)
+    phone = db.Column(db.String(20))
+    role = db.Column(db.String(50))
+
+class Baza(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    contact = db.Column(db.String(100))
+    status = db.Column(db.String(20))
+
+class BazaGold(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    contact = db.Column(db.String(100))
+    status = db.Column(db.String(20))
+
+class BazaCold(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    contact = db.Column(db.String(100))
+    status = db.Column(db.String(20))
+
+class TehSpec(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    contact = db.Column(db.String(100))
+    status = db.Column(db.String(20))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -21,31 +46,23 @@ def load_user(user_id):
 def index():
     return render_template('index.html')
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['POST'])
 def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        phone_number = request.form['phone_number']
-        role = request.form['role']
-        new_user = User(username=username, phone_number=phone_number, role=role)
-        db.session.add(new_user)
-        db.session.commit()
-        login_user(new_user)
-        return redirect(url_for('dashboard'))
-    return render_template('register.html')
+    data = request.get_json()
+    new_user = User(telegram_id=data['telegram_id'], phone=data['phone'])
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify({"message": "User registered successfully"}), 201
 
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    if current_user.role == 'Менеджер холодных звонков':
-        contacts = Baza.query.all()
-        return render_template('cold_calls.html', contacts=contacts)
-    elif current_user.role == 'Менеджер горячих звонков':
-        contacts = BazaGold.query.all()
-        return render_template('warm_calls.html', contacts=contacts)
-    return redirect(url_for('index'))
+@app.route('/select_role', methods=['POST'])
+def select_role():
+    data = request.get_json()
+    user = User.query.filter_by(telegram_id=data['telegram_id']).first()
+    user.role = data['role']
+    db.session.commit()
+    return jsonify({"message": "Role selected successfully"}), 200
+
+# Остальные маршруты для функционала
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
