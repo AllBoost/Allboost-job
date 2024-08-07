@@ -1,9 +1,13 @@
 from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+<<<<<<< HEAD
+=======
+import os
+>>>>>>> 377875c88f70cc1a4ac78d7ea4ddc6f1096501ea
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///allboost.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_secret_key'
 
@@ -47,6 +51,7 @@ def index():
 
 @app.route('/register', methods=['POST'])
 def register():
+<<<<<<< HEAD
     data = request.json
     new_user = User(telegram_id=data['telegram_id'], phone=data['phone'], role=data['role'])
     db.session.add(new_user)
@@ -92,8 +97,23 @@ def update_contact():
         db.session.delete(contact)
         db.session.commit()
     return jsonify({'message': 'Contact updated successfully'})
+=======
+    data = request.get_json()
+    new_user = User(telegram_id=data['telegram_id'], phone=data['phone'])
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify({"message": "User registered successfully"}), 201
+
+@app.route('/select_role', methods=['POST'])
+def select_role():
+    data = request.get_json()
+    user = User.query.filter_by(telegram_id=data['telegram_id']).first()
+    user.role = data['role']
+    db.session.commit()
+    return jsonify({"message": "Role selected successfully"}), 200
+
+# Остальные маршруты для функционала
+>>>>>>> 377875c88f70cc1a4ac78d7ea4ddc6f1096501ea
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
