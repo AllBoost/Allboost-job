@@ -3,7 +3,7 @@ from db import connect
 import requests
 
 app = Flask(__name__)
-TOKEN = '7229780590:AAGhyCEXUeuOyViirGdr3qg5URwX0Sr1aTw'
+TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
 
 @app.route('/start')
 def start():
