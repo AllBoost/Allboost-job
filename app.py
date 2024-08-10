@@ -1,6 +1,5 @@
 from flask import Flask, request, render_template_string
 from db import connect
-import requests
 import os
 
 app = Flask(__name__)
