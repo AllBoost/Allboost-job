@@ -1,17 +1,21 @@
 from flask import Flask, request, render_template_string
 from db import connect
 import requests
+import os
 
 app = Flask(__name__)
-TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+TOKEN = '7229780590:AAGhyCEXUeuOyViirGdr3qg5URwX0Sr1aTw'
 
 @app.route('/start')
 def start():
     user_id = request.args.get('user_id')
     if user_id:
+        # Получаем информацию о пользователе через API Telegram
         user_info = requests.get(f'https://api.telegram.org/bot{TOKEN}/getChat?chat_id={user_id}').json()
-        username = user_info['result']['username']
-        phone_number = user_info.get('phone_number', 'Not provided')
+        username = user_info['result'].get('username', 'Not provided')
+        
+        # Telegram API не предоставляет номер телефона, его нужно запросить через бот
+        phone_number = "Not provided" 
 
         conn = connect()
         if conn:
@@ -30,6 +34,7 @@ def start():
             cursor.close()
             conn.close()
 
+        # Отображаем приветственную страницу
         return render_template_string('<img src="welcome.gif" alt="Welcome to AllBoost-job">')
     else:
         return "User ID not provided."
