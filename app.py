@@ -1,42 +1,34 @@
-from flask import Flask, request, render_template_string
-from db import connect
-import os
+from flask import Flask, send_from_directory
+import logging
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, CallbackContext
 
+# Настройка логирования
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+# Создаем экземпляр Flask
 app = Flask(__name__)
-TOKEN = '7229780590:AAGhyCEXUeuOyViirGdr3qg5URwX0Sr1aTw'
 
-@app.route('/start')
-def start():
-    user_id = request.args.get('user_id')
-    if user_id:
-        # Получаем информацию о пользователе через API Telegram
-        user_info = requests.get(f'https://api.telegram.org/bot{TOKEN}/getChat?chat_id={user_id}').json()
-        username = user_info['result'].get('username', 'Not provided')
-        
-        # Telegram API не предоставляет номер телефона, его нужно запросить через бот
-        phone_number = "Not provided" 
+# Telegram Bot Token
+TELEGRAM_TOKEN = '7229780590:AAGhyCEXUeuOyViirGdr3qg5URwX0Sr1aTw'
 
-        conn = connect()
-        if conn:
-            cursor = conn.cursor()
-            
-            # Проверка, существует ли пользователь в базе данных
-            cursor.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
-            result = cursor.fetchone()
+# Функция для обработки команды /start
+def start(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text('Привет! Я твой Telegram бот.')
 
-            if not result:
-                # Если пользователь не найден, добавляем его
-                cursor.execute("INSERT INTO users (user_id, username, phone_number) VALUES (%s, %s, %s)",
-                               (user_id, username, phone_number))
-                conn.commit()
+# Настройка бота
+updater = Updater(token=TELEGRAM_TOKEN, use_context=True)
+dispatcher = updater.dispatcher
+dispatcher.add_handler(CommandHandler("start", start))
 
-            cursor.close()
-            conn.close()
+# Запуск бота в отдельном потоке
+updater.start_polling()
 
-        # Отображаем приветственную страницу
-        return render_template_string('<img src="welcome.gif" alt="Welcome to AllBoost-job">')
-    else:
-        return "User ID not provided."
+# Эндпоинт для отображения GIF
+@app.route('/')
+def home():
+    return send_from_directory('.', 'welcome.gif')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    # Запуск Flask приложения
+    app.run(host='0.0.0.0', port=5000)
