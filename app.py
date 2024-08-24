@@ -8,7 +8,7 @@ from datetime import datetime
 app = Flask(__name__)
 
 # Инициализация Telegram Application
-app_telegram = Application.builder().token("YOUR_BOT_TOKEN").build()
+app_telegram = Application.builder().token("7229780590:AAGhyCEXUeuOyViirGdr3qg5URwX0Sr1aTw").build()
 
 # Функция для записи пользователя в Excel с добавлением номера телефона и даты регистрации
 def add_user_to_excel(username: str, user_id: int, phone_number: str = '', registration_date: str = ''):
